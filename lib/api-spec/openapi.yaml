@@ -1,0 +1,1787 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: 1000 Yatırımlar BIST Trading Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: stocks
+    description: Stock market data
+  - name: portfolio
+    description: Portfolio management
+  - name: orders
+    description: Order management
+  - name: admin
+    description: Admin panel operations
+  - name: news
+    description: Market news
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/upload-identity:
+    post:
+      operationId: uploadIdentity
+      tags: [auth]
+      summary: Upload identity document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                front:
+                  type: string
+                  format: binary
+                back:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Identity uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /stocks:
+    get:
+      operationId: getStocks
+      tags: [stocks]
+      summary: Get all BIST stocks
+      parameters:
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [name_asc, name_desc, price_desc, price_asc, change_desc, change_asc, volume_desc, volume_asc]
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [gainers, losers, most_volume, all]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: minChange
+          in: query
+          schema:
+            type: number
+        - name: maxChange
+          in: query
+          schema:
+            type: number
+        - name: volumeRange
+          in: query
+          schema:
+            type: string
+            enum: [lt100k, 100k_1m, 1m_10m, gt10m]
+        - name: watchlistOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of stocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Stock"
+
+  /stocks/{symbol}:
+    get:
+      operationId: getStock
+      tags: [stocks]
+      summary: Get single stock
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stock data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stock"
+
+  /stocks/market-summary:
+    get:
+      operationId: getMarketSummary
+      tags: [stocks]
+      summary: Get market summary
+      responses:
+        "200":
+          description: Market summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketSummary"
+
+  /stocks/top-movers:
+    get:
+      operationId: getTopMovers
+      tags: [stocks]
+      summary: Get top movers
+      responses:
+        "200":
+          description: Top movers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopMovers"
+
+  /watchlist:
+    get:
+      operationId: getWatchlist
+      tags: [stocks]
+      summary: Get user watchlist
+      responses:
+        "200":
+          description: Watchlist
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+    post:
+      operationId: addToWatchlist
+      tags: [stocks]
+      summary: Add to watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                symbol:
+                  type: string
+              required: [symbol]
+      responses:
+        "200":
+          description: Added to watchlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /watchlist/{symbol}:
+    delete:
+      operationId: removeFromWatchlist
+      tags: [stocks]
+      summary: Remove from watchlist
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Removed from watchlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /portfolio:
+    get:
+      operationId: getPortfolio
+      tags: [portfolio]
+      summary: Get user portfolio
+      responses:
+        "200":
+          description: Portfolio data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Portfolio"
+
+  /orders:
+    get:
+      operationId: getOrders
+      tags: [orders]
+      summary: Get user orders
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, closed, all]
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /orders/{id}/close:
+    post:
+      operationId: closeOrder
+      tags: [orders]
+      summary: Close position
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Position closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /balance/withdraw:
+    post:
+      operationId: withdraw
+      tags: [portfolio]
+      summary: Withdraw funds
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+              required: [amount]
+      responses:
+        "200":
+          description: Withdrawal successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /balance/history:
+    get:
+      operationId: getBalanceHistory
+      tags: [portfolio]
+      summary: Get balance history
+      responses:
+        "200":
+          description: Balance history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BalanceTransaction"
+
+  /news:
+    get:
+      operationId: getNews
+      tags: [news]
+      summary: Get market news
+      responses:
+        "200":
+          description: News items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NewsItem"
+
+  /admin/users:
+    get:
+      operationId: adminGetUsers
+      tags: [admin]
+      summary: Get all users
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersResponse"
+
+  /admin/users/{id}:
+    get:
+      operationId: adminGetUser
+      tags: [admin]
+      summary: Get user details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetail"
+    patch:
+      operationId: adminUpdateUser
+      tags: [admin]
+      summary: Update user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateUserRequest"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/users/{id}/balance:
+    patch:
+      operationId: adminUpdateBalance
+      tags: [admin]
+      summary: Update user balance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                type:
+                  type: string
+                  enum: [add, subtract, set]
+                note:
+                  type: string
+              required: [amount, type]
+      responses:
+        "200":
+          description: Balance updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/orders/{id}:
+    patch:
+      operationId: adminUpdateOrder
+      tags: [admin]
+      summary: Update order settings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateOrderRequest"
+      responses:
+        "200":
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/verify-identity/{userId}:
+    post:
+      operationId: adminVerifyIdentity
+      tags: [admin]
+      summary: Verify user identity
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approved:
+                  type: boolean
+                note:
+                  type: string
+              required: [approved]
+      responses:
+        "200":
+          description: Identity verification updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/stats:
+    get:
+      operationId: adminGetStats
+      tags: [admin]
+      summary: Get admin statistics
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /deposit-addresses:
+    get:
+      operationId: getDepositAddresses
+      tags: [portfolio]
+      summary: Get deposit addresses
+      responses:
+        "200":
+          description: Deposit addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepositAddress"
+
+  /admin/deposit-addresses:
+    post:
+      operationId: adminCreateDepositAddress
+      tags: [admin]
+      summary: Create deposit address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepositAddressRequest"
+      responses:
+        "201":
+          description: Address created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositAddress"
+
+  /admin/deposit-addresses/{id}:
+    delete:
+      operationId: adminDeleteDepositAddress
+      tags: [admin]
+      summary: Delete deposit address
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Address deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /deposit-requests:
+    post:
+      operationId: createDepositRequest
+      tags: [portfolio]
+      summary: Submit deposit request with receipt
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: string
+                receipt:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Deposit request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/deposit-requests:
+    get:
+      operationId: adminGetDepositRequests
+      tags: [admin]
+      summary: Get deposit requests
+      responses:
+        "200":
+          description: Deposit requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepositRequestItem"
+
+  /admin/deposit-requests/{id}:
+    patch:
+      operationId: adminProcessDepositRequest
+      tags: [admin]
+      summary: Approve or reject deposit request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [approve, reject]
+                note:
+                  type: string
+              required: [action]
+      responses:
+        "200":
+          description: Processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /withdrawal-requests:
+    post:
+      operationId: createWithdrawalRequest
+      tags: [portfolio]
+      summary: Submit withdrawal request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWithdrawalRequest"
+      responses:
+        "201":
+          description: Withdrawal request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /tier-application:
+    post:
+      operationId: applyForTier
+      tags: [auth]
+      summary: Apply for account tier upgrade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tier:
+                  type: string
+                  enum: [silver, gold, diamond]
+              required: [tier]
+      responses:
+        "200":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /campaigns:
+    get:
+      operationId: getCampaigns
+      tags: [news]
+      summary: Get active campaigns
+      responses:
+        "200":
+          description: Campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CampaignItem"
+
+  /admin/campaigns:
+    post:
+      operationId: adminCreateCampaign
+      tags: [admin]
+      summary: Create campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCampaignRequest"
+      responses:
+        "201":
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignItem"
+
+  /admin/campaigns/{id}:
+    patch:
+      operationId: adminUpdateCampaign
+      tags: [admin]
+      summary: Update campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCampaignRequest"
+      responses:
+        "200":
+          description: Campaign updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignItem"
+    delete:
+      operationId: adminDeleteCampaign
+      tags: [admin]
+      summary: Delete campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Campaign deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /expert-picks:
+    get:
+      operationId: getExpertPicks
+      tags: [stocks]
+      summary: Get expert stock picks
+      responses:
+        "200":
+          description: Expert picks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExpertPickItem"
+
+  /admin/expert-picks:
+    post:
+      operationId: adminAddExpertPick
+      tags: [admin]
+      summary: Add expert pick
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                symbol:
+                  type: string
+                note:
+                  type: string
+              required: [symbol]
+      responses:
+        "201":
+          description: Pick added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/expert-picks/{id}:
+    delete:
+      operationId: adminRemoveExpertPick
+      tags: [admin]
+      summary: Remove expert pick
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Pick removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [auth]
+      summary: Get user notifications
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationItem"
+
+  /notifications/unread-count:
+    get:
+      operationId: getUnreadNotificationCount
+      tags: [auth]
+      summary: Get unread notification count
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnreadCountResponse"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [auth]
+      summary: Mark notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /notifications/read-all:
+    patch:
+      operationId: markAllNotificationsRead
+      tags: [auth]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/notifications:
+    post:
+      operationId: adminSendNotification
+      tags: [admin]
+      summary: Send notification to user or broadcast
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminSendNotificationRequest"
+      responses:
+        "201":
+          description: Notification sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/withdrawal-requests:
+    get:
+      operationId: adminGetWithdrawalRequests
+      tags: [admin]
+      summary: Get withdrawal requests
+      responses:
+        "200":
+          description: Withdrawal requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WithdrawalRequestItem"
+
+  /admin/withdrawal-requests/{id}:
+    patch:
+      operationId: adminProcessWithdrawalRequest
+      tags: [admin]
+      summary: Approve or reject withdrawal request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [approve, reject]
+                note:
+                  type: string
+              required: [action]
+      responses:
+        "200":
+          description: Processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/tier-applications:
+    get:
+      operationId: adminGetTierApplications
+      tags: [admin]
+      summary: Get tier applications
+      responses:
+        "200":
+          description: Tier applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TierApplicationItem"
+
+  /admin/tier-applications/{id}:
+    patch:
+      operationId: adminProcessTierApplication
+      tags: [admin]
+      summary: Approve or reject tier application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [approve, reject]
+              required: [action]
+      responses:
+        "200":
+          description: Processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/god-overview:
+    get:
+      operationId: adminGetGodOverview
+      tags: [admin]
+      summary: Get god mode overview with pending counts
+      responses:
+        "200":
+          description: God overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GodOverview"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required: [error]
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success]
+
+    RegisterRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        tcNo:
+          type: string
+        birthDate:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        phone:
+          type: string
+        referralCode:
+          type: string
+        password:
+          type: string
+      required: [firstName, lastName, tcNo, birthDate, city, phone, password]
+
+    LoginRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+      required: [phone, password]
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required: [token, user]
+
+    ChangePasswordRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+      required: [currentPassword, newPassword]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        accountId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        tcNo:
+          type: string
+        birthDate:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        isIdentityVerified:
+          type: boolean
+        identityStatus:
+          type: string
+          enum: [pending, approved, rejected, none]
+        identityFrontUrl:
+          type: string
+          nullable: true
+        identityBackUrl:
+          type: string
+          nullable: true
+        isAdmin:
+          type: boolean
+        accountType:
+          type: string
+          enum: [standard, silver, gold, diamond]
+        creditEligibility:
+          type: string
+          enum: [eligible, not_eligible, pending]
+        balance:
+          type: number
+        frozenBalance:
+          type: number
+        portfolioValue:
+          type: number
+        totalValue:
+          type: number
+        spreadPercent:
+          type: number
+        commissionPercent:
+          type: number
+        lastSeenAt:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required: [id, accountId, firstName, lastName, phone, isIdentityVerified, identityStatus, isAdmin, accountType, balance]
+
+    Stock:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        change:
+          type: number
+        changePercent:
+          type: number
+        volume:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        open:
+          type: number
+        previousClose:
+          type: number
+        marketCap:
+          type: number
+        isWatchlisted:
+          type: boolean
+      required: [symbol, name, price, change, changePercent, volume]
+
+    MarketSummary:
+      type: object
+      properties:
+        isOpen:
+          type: boolean
+        gainersPercent:
+          type: number
+        losersPercent:
+          type: number
+        stablePercent:
+          type: number
+        totalVolume:
+          type: number
+        xu100:
+          type: object
+          properties:
+            price:
+              type: number
+            change:
+              type: number
+            changePercent:
+              type: number
+          required: [price, change, changePercent]
+      required: [isOpen, gainersPercent, losersPercent, stablePercent, totalVolume]
+
+    TopMovers:
+      type: object
+      properties:
+        gainers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Stock"
+        losers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Stock"
+        mostVolume:
+          type: array
+          items:
+            $ref: "#/components/schemas/Stock"
+      required: [gainers, losers, mostVolume]
+
+    Portfolio:
+      type: object
+      properties:
+        availableBalance:
+          type: number
+        frozenBalance:
+          type: number
+        portfolioValue:
+          type: number
+        totalValue:
+          type: number
+        t2Balance:
+          type: number
+        profitLoss:
+          type: number
+        profitLossPercent:
+          type: number
+        positions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Position"
+      required: [availableBalance, frozenBalance, portfolioValue, totalValue, t2Balance, profitLoss, profitLossPercent, positions]
+
+    Position:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        stockName:
+          type: string
+        direction:
+          type: string
+          enum: [buy, sell]
+        lots:
+          type: number
+        openPrice:
+          type: number
+        currentPrice:
+          type: number
+        closePrice:
+          type: number
+        totalCost:
+          type: number
+        currentValue:
+          type: number
+        profitLoss:
+          type: number
+        profitLossPercent:
+          type: number
+        spreadAdjustment:
+          type: number
+        commissionAmount:
+          type: number
+        status:
+          type: string
+          enum: [open, closed]
+        openedAt:
+          type: string
+        closedAt:
+          type: string
+      required: [id, symbol, stockName, direction, lots, openPrice, currentPrice, totalCost, currentValue, profitLoss, profitLossPercent, status, openedAt]
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        stockName:
+          type: string
+        type:
+          type: string
+          enum: [market, limit]
+        direction:
+          type: string
+          enum: [buy, sell]
+        lots:
+          type: number
+        price:
+          type: number
+        limitPrice:
+          type: number
+        totalAmount:
+          type: number
+        status:
+          type: string
+          enum: [pending, filled, cancelled, open, closed]
+        openPrice:
+          type: number
+        closePrice:
+          type: number
+        profitLoss:
+          type: number
+        spreadAdjustment:
+          type: number
+        commissionAmount:
+          type: number
+        createdAt:
+          type: string
+        filledAt:
+          type: string
+        closedAt:
+          type: string
+      required: [id, symbol, type, direction, lots, status, createdAt]
+
+    CreateOrderRequest:
+      type: object
+      properties:
+        symbol:
+          type: string
+        type:
+          type: string
+          enum: [market, limit]
+        direction:
+          type: string
+          enum: [buy, sell]
+        lots:
+          type: integer
+        limitPrice:
+          type: number
+      required: [symbol, type, direction, lots]
+
+    BalanceTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [deposit, withdraw, trade_open, trade_close, commission, admin_adjustment]
+        amount:
+          type: number
+        balanceBefore:
+          type: number
+        balanceAfter:
+          type: number
+        description:
+          type: string
+        createdAt:
+          type: string
+      required: [id, type, amount, balanceBefore, balanceAfter, createdAt]
+
+    NewsItem:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        url:
+          type: string
+        source:
+          type: string
+        publishedAt:
+          type: string
+        category:
+          type: string
+      required: [id, title, source, publishedAt]
+
+    AdminUsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [users, total, page, limit]
+
+    AdminUserDetail:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        balanceHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/BalanceTransaction"
+      required: [user, orders, balanceHistory]
+
+    AdminUpdateUserRequest:
+      type: object
+      properties:
+        accountType:
+          type: string
+          enum: [standard, silver, gold, diamond]
+        creditEligibility:
+          type: string
+          enum: [eligible, not_eligible, pending]
+        spreadPercent:
+          type: number
+        commissionPercent:
+          type: number
+        isAdmin:
+          type: boolean
+
+    AdminUpdateOrderRequest:
+      type: object
+      properties:
+        openPrice:
+          type: number
+        closePrice:
+          type: number
+        direction:
+          type: string
+          enum: [buy, sell]
+        spreadAdjustment:
+          type: number
+        commissionAmount:
+          type: number
+
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        activeUsers:
+          type: integer
+        pendingVerifications:
+          type: integer
+        totalDeposits:
+          type: number
+        totalWithdrawals:
+          type: number
+        openPositions:
+          type: integer
+        todayNewUsers:
+          type: integer
+        recentActivities:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              message:
+                type: string
+              createdAt:
+                type: string
+            required: [type, message, createdAt]
+      required: [totalUsers, activeUsers, pendingVerifications, totalDeposits, totalWithdrawals, openPositions, todayNewUsers, recentActivities]
+
+    DepositAddress:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [bank, crypto]
+        bankName:
+          type: string
+        accountHolder:
+          type: string
+        accountNumber:
+          type: string
+        iban:
+          type: string
+        cryptoNetwork:
+          type: string
+        walletAddress:
+          type: string
+        label:
+          type: string
+      required: [id, type]
+
+    CreateDepositAddressRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [bank, crypto]
+        bankName:
+          type: string
+        accountHolder:
+          type: string
+        accountNumber:
+          type: string
+        iban:
+          type: string
+        cryptoNetwork:
+          type: string
+        walletAddress:
+          type: string
+        label:
+          type: string
+      required: [type]
+
+    DepositRequestItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        amount:
+          type: number
+        receiptUrl:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        note:
+          type: string
+        createdAt:
+          type: string
+        processedAt:
+          type: string
+      required: [id, userId, amount, status, createdAt]
+
+    CreateWithdrawalRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+        accountName:
+          type: string
+        accountAddress:
+          type: string
+      required: [amount, accountName, accountAddress]
+
+    CampaignItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        createdAt:
+          type: string
+      required: [id, title]
+
+    CreateCampaignRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+      required: [title]
+
+    ExpertPickItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        note:
+          type: string
+        stockName:
+          type: string
+        price:
+          type: number
+        change:
+          type: number
+        changePercent:
+          type: number
+      required: [id, symbol]
+
+    NotificationItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        body:
+          type: string
+        type:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+      required: [id, userId, title, body, type, isRead, createdAt]
+
+    UnreadCountResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+      required: [count]
+
+    AdminSendNotificationRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        type:
+          type: string
+        userId:
+          type: integer
+      required: [title]
+
+    WithdrawalRequestItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        amount:
+          type: number
+        accountName:
+          type: string
+        accountAddress:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        note:
+          type: string
+        createdAt:
+          type: string
+        processedAt:
+          type: string
+      required: [id, userId, amount, status, createdAt]
+
+    TierApplicationItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        currentTier:
+          type: string
+        requestedTier:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        createdAt:
+          type: string
+        processedAt:
+          type: string
+      required: [id, userId, requestedTier, status, createdAt]
+
+    GodOverview:
+      type: object
+      properties:
+        pendingDeposits:
+          type: integer
+        pendingWithdrawals:
+          type: integer
+        pendingTiers:
+          type: integer
+        pendingIdentity:
+          type: integer
+        totalUsers:
+          type: integer
+        totalBalance:
+          type: number
+        totalFrozen:
+          type: number
+        last24hRegistrations:
+          type: integer
+        last24hTransactions:
+          type: integer
+        last24hVolume:
+          type: number
+      required: [pendingDeposits, pendingWithdrawals, pendingTiers, pendingIdentity, totalUsers, totalBalance, totalFrozen, last24hRegistrations, last24hTransactions, last24hVolume]
