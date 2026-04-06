@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/corporate/"
+title = "1000 Yatırımlar - Kurumsal Site"
+version = "1.0.0"
+id = "artifacts/corporate-site"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 18897
+name = "web"
+paths = ["/corporate/"]
+
+[services.development]
+run = "pnpm --filter @workspace/corporate-site run dev"
+
+[services.env]
+PORT = "18897"
+BASE_PATH = "/corporate/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/corporate-site", "run", "build"]
+publicDir = "artifacts/corporate-site/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

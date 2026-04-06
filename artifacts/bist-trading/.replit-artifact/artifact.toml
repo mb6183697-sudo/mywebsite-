@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "1000 Yatırımlar - BIST Trading"
+version = "1.0.0"
+id = "artifacts/bist-trading"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 25049
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/bist-trading run dev"
+
+[services.env]
+PORT = "25049"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/bist-trading", "run", "build"]
+publicDir = "artifacts/bist-trading/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
