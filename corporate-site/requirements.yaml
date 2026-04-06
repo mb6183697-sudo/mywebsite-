@@ -1,0 +1,25 @@
+packages:
+  "framer-motion": "For premium, smooth scroll-triggered animations and page transitions"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes safely"
+  "lucide-react": "For crisp, modern icons used across the features and services sections"
+  "react-hook-form": "For robust contact form state management and validation"
+  "@hookform/resolvers": "For integrating Zod validation with react-hook-form"
+  "zod": "For contact form schema validation"
+
+images:
+  - path: "artifacts/corporate-site/public/images/hero-bg.png"
+    description: "Abstract luxury financial background, dark navy blue and slate colors with glowing gold and amber stock market chart lines, subtle grid pattern, premium corporate aesthetic, deep shadows, 3d glassmorphism elements"
+    aspect_ratio: "16:9"
+  - path: "artifacts/corporate-site/public/images/about-globe.png"
+    description: "A visually striking abstract glowing globe on a dark background, intersecting glowing gold and amber data lines representing global financial connections and technology, highly detailed, photorealistic, 8k"
+    aspect_ratio: "16:9"
+  - path: "artifacts/corporate-site/public/images/services-abstract.png"
+    description: "Luxury dark modern abstract 3d geometric shapes in deep slate and gold colors, soft studio lighting, representing wealth management and financial stability, premium corporate feel"
+    aspect_ratio: "16:9"
+
+notes:
+  - Frontend-only marketing site for "Bin Yatırımlar"
+  - Using dark mode professional theme (slate/navy + gold)
+  - CTA links will use "#" as placeholder for the external trading application
+  - Wouter is used for frontend routing
